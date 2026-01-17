@@ -13,7 +13,17 @@ import * as Notifications from "expo-notifications";
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
-
+  useEffect(() => {
+    const sub = Notifications.addNotificationResponseReceivedListener(
+      (resp) => {
+        const data: any = resp.notification.request.content.data;
+        if (data?.type === "BRIEFING") {
+          router.replace("/"); // index route
+        }
+      }
+    );
+    return () => sub.remove();
+  }, []);
   useEffect(() => {
     const sub = Notifications.addNotificationResponseReceivedListener(
       (response) => {
