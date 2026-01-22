@@ -7,18 +7,10 @@ import { router } from "expo-router";
 type Props = {
   url: string;
   onLoadError?: () => void;
-
-  // ✅ add these
-  injectedJavaScriptBeforeContentLoaded?: string;
   userAgent?: string;
 };
 
-export function DaexWebView({
-  url,
-  onLoadError,
-  injectedJavaScriptBeforeContentLoaded,
-  userAgent,
-}: Props) {
+export function DaexWebView({ url, onLoadError, userAgent }: Props) {
   const webViewRef = useRef<WebView>(null);
   const [canGoBack, setCanGoBack] = useState(false);
 
@@ -34,7 +26,7 @@ export function DaexWebView({
     if (Platform.OS !== "android") return;
     const sub = BackHandler.addEventListener(
       "hardwareBackPress",
-      onAndroidBackPress
+      onAndroidBackPress,
     );
     return () => sub.remove();
   }, [onAndroidBackPress]);
@@ -52,10 +44,6 @@ export function DaexWebView({
         router.push("/native/app-settings");
       }
 
-      if (msg.type === "OPEN_PUSH_SETTINGS") {
-        router.push("/native/push-settings");
-      }
-
       if (msg.type === "GET_PUSH_STATUS") {
         // You can respond here later
       }
@@ -65,7 +53,10 @@ export function DaexWebView({
   };
 
   return (
-    <SafeAreaView style={{ flex: 1 }} edges={["top", "left", "right"]}>
+    <SafeAreaView
+      style={{ flex: 1 }}
+      edges={["top", "left", "right", "bottom"]}
+    >
       <WebView
         ref={webViewRef}
         source={{ uri: url }}

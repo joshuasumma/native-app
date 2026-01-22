@@ -4,7 +4,7 @@ import NetInfo from "@react-native-community/netinfo";
 import { DaexWebView } from "@/components/DaexWebView";
 import { OfflineScreen } from "@/components/OfflineScreen";
 
-const URL = "http://192.168.2.112:3000/";
+const URL = "http://daex.app/";
 
 export default function Index() {
   const [isOnline, setIsOnline] = useState(true);
@@ -39,10 +39,6 @@ export default function Index() {
       key={webKey}
       url={URL}
       onLoadError={() => setIsOnline(false)}
-      injectedJavaScriptBeforeContentLoaded={`
-        window.__DAEX_NATIVE__ = true;
-        true;
-      `}
       userAgent={`DAEXNativeApp/1.0 ${Platform.OS}`}
     />
   );

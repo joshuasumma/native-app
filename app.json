@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "DÆX",
-    "slug": "DAEX",
+    "slug": "daex",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/logo.jpg",
@@ -9,39 +9,48 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.daex"
     },
     "android": {
       "icon": "./assets/images/logo.jpg",
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "notification": {
-        "icon": "./assets/images/notification-icon.png",
+        "image": "./assets/images/logo.jpg",
         "color": "#000000"
-      }
+      },
+      "package": "com.anonymous.daex"
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/logo.jpg"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
+          "image": "./assets/images/logo.jpg",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
           "dark": {
+            "image": "./assets/images/logo.jpg",
             "backgroundColor": "#000000"
           }
         }
-      ],
-      "@react-native-community/datetimepicker"
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "63d3b418-e65e-41a5-b2c7-c543da56f444"
+      }
     }
   }
 }
