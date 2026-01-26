@@ -52,18 +52,27 @@ export function DaexWebView({ url, onLoadError, userAgent }: Props) {
     }
   };
 
+  const cssFix = `
+  (function() {
+    const s = document.createElement('style');
+    s.innerHTML = \`
+      html, body { margin: 0 !important; padding: 0 !important; }
+      body { padding-top: 0 !important; }
+    \`;
+    document.head.appendChild(s);
+  })();
+  true;
+`;
   return (
-    <SafeAreaView
-      style={{ flex: 1 }}
-      edges={["top", "left", "right", "bottom"]}
-    >
+    <SafeAreaView style={{ flex: 1 }} edges={["top", "left", "right"]}>
       <WebView
+        style={{ flex: 1 }}
         ref={webViewRef}
+        contentInset={{ top: 0, left: 0, bottom: 0, right: 0 }}
         source={{ uri: url }}
         javaScriptEnabled
         bounces={false}
         domStorageEnabled
-        overScrollMode="never"
         startInLoadingState
         injectedJavaScriptBeforeContentLoaded={`
           window.__DAEX_NATIVE__ = true;
@@ -73,6 +82,7 @@ export function DaexWebView({ url, onLoadError, userAgent }: Props) {
             }
           };
           true;
+           ${cssFix}
         `}
         onMessage={onMessage}
         allowsBackForwardNavigationGestures

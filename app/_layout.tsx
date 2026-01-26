@@ -20,7 +20,7 @@ export default function RootLayout() {
         if (data?.type === "BRIEFING") {
           router.replace("/"); // index route
         }
-      }
+      },
     );
     return () => sub.remove();
   }, []);
@@ -35,7 +35,7 @@ export default function RootLayout() {
 
           // OR later: send a message into WebView to open /briefing
         }
-      }
+      },
     );
 
     return () => sub.remove();
