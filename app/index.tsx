@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Platform } from "react-native";
 import NetInfo from "@react-native-community/netinfo";
 import { DaexWebView } from "@/components/DaexWebView";
 import { OfflineScreen } from "@/components/OfflineScreen";
 
-const URL = "http://daex.app/";
+const URL = "http://daex.app/"; //"http://192.168.2.112:3000/"; //
 
 export default function Index() {
   const [isOnline, setIsOnline] = useState(true);

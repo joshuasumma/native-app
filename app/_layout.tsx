@@ -8,31 +8,23 @@ import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import * as Notifications from "expo-notifications";
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
-  useEffect(() => {
-    const sub = Notifications.addNotificationResponseReceivedListener(
-      (resp) => {
-        const data: any = resp.notification.request.content.data;
-        if (data?.type === "BRIEFING") {
-          router.replace("/"); // index route
-        }
-      },
-    );
-    return () => sub.remove();
-  }, []);
+  const handledRef = useRef(false);
+
   useEffect(() => {
     const sub = Notifications.addNotificationResponseReceivedListener(
       (response) => {
+        if (handledRef.current) return;
+        handledRef.current = true;
         const data = response.notification.request.content.data;
 
         if (data?.type === "BRIEFING") {
           // open native screen
-          router.push("/native/app-settings");
-
+          router.replace("/native/app-settings");
           // OR later: send a message into WebView to open /briefing
         }
       },

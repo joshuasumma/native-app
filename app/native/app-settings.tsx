@@ -31,7 +31,7 @@ export default function PushSettings() {
   const text = isDark ? "#ffffff" : "#000000";
   const muted = isDark ? "rgba(255,255,255,0.65)" : "rgba(0,0,0,0.65)";
   const card = isDark ? "#111111" : "#f6f6f6";
-  const border = isDark ? "rgba(255,255,255,0.16)" : "rgba(0,0,0,0.12)";
+  const border = isDark ? "#2f2f2f" : "#dcdcdc";
 
   // default 08:00
   const [time, setTime] = useState<Date>(() => {
@@ -90,12 +90,12 @@ export default function PushSettings() {
 
       const res = await scheduleDailyBriefing(
         newTime.getHours(),
-        newTime.getMinutes()
+        newTime.getMinutes(),
       );
       if (!res.ok) {
         Alert.alert(
           "Notifications disabled",
-          "Please enable notifications in your system settings."
+          "Please enable notifications in your system settings.",
         );
         await persistEnabled(false);
         setEnabled(false);
@@ -128,7 +128,6 @@ export default function PushSettings() {
   return (
     <View style={{ flex: 1, backgroundColor: bg }}>
       <NativeHeader title="App Settings" />
-
       <View style={{ padding: 16, gap: 20 }}>
         <View>
           <Text style={{ fontSize: 22, fontWeight: "700", color: text }}>
@@ -140,7 +139,6 @@ export default function PushSettings() {
             Choose a time and enable a daily notification.
           </Text>
         </View>
-
         <View
           style={{
             backgroundColor: card,

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { BackHandler, Platform, View, ActivityIndicator } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { Edge, SafeAreaView } from "react-native-safe-area-context";
 import { WebView, WebViewMessageEvent } from "react-native-webview";
 import { router } from "expo-router";
 
@@ -30,6 +30,7 @@ export function DaexWebView({ url, onLoadError, userAgent }: Props) {
     );
     return () => sub.remove();
   }, [onAndroidBackPress]);
+  const lastNavRef = useRef<number>(0);
 
   type BridgeMessage =
     | { type: "OPEN_NATIVE_MENU" }
@@ -41,6 +42,9 @@ export function DaexWebView({ url, onLoadError, userAgent }: Props) {
       const msg: BridgeMessage = JSON.parse(event.nativeEvent.data);
 
       if (msg.type === "OPEN_NATIVE_MENU") {
+        const now = Date.now();
+        if (now - lastNavRef.current < 1000) return; // ignore duplicate within 1s
+        lastNavRef.current = now;
         router.push("/native/app-settings");
       }
 
@@ -52,23 +56,14 @@ export function DaexWebView({ url, onLoadError, userAgent }: Props) {
     }
   };
 
-  const cssFix = `
-  (function() {
-    const s = document.createElement('style');
-    s.innerHTML = \`
-      html, body { margin: 0 !important; padding: 0 !important; }
-      body { padding-top: 0 !important; }
-    \`;
-    document.head.appendChild(s);
-  })();
-  true;
-`;
   return (
-    <SafeAreaView style={{ flex: 1 }} edges={["top", "left", "right"]}>
+    <SafeAreaView
+      style={{ flex: 1 }}
+      edges={["top", "left", "right", "bottom"] as Edge[]}
+    >
       <WebView
         style={{ flex: 1 }}
         ref={webViewRef}
-        contentInset={{ top: 0, left: 0, bottom: 0, right: 0 }}
         source={{ uri: url }}
         javaScriptEnabled
         bounces={false}
@@ -82,7 +77,6 @@ export function DaexWebView({ url, onLoadError, userAgent }: Props) {
             }
           };
           true;
-           ${cssFix}
         `}
         onMessage={onMessage}
         allowsBackForwardNavigationGestures

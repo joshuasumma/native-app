@@ -2,7 +2,7 @@
   "expo": {
     "name": "DÆX",
     "slug": "daex",
-    "version": "1.0.0",
+    "version": "1.1",
     "orientation": "portrait",
     "icon": "./assets/images/logo.jpg",
     "scheme": "daex",
@@ -10,7 +10,10 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.daex"
+      "bundleIdentifier": "com.anonymous.daex",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "icon": "./assets/images/logo.jpg",
