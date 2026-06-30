@@ -59,7 +59,11 @@ export function DaexWebView({ url, onLoadError, userAgent }: Props) {
   return (
     <SafeAreaView
       style={{ flex: 1 }}
-      edges={["top", "left", "right", "bottom"] as Edge[]}
+      edges={
+        ["top", "left", "right", userAgent !== "ios" && "bottom"].filter(
+          Boolean,
+        ) as Edge[]
+      }
     >
       <WebView
         style={{ flex: 1 }}

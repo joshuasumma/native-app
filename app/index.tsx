@@ -39,7 +39,7 @@ export default function Index() {
       key={webKey}
       url={URL}
       onLoadError={() => setIsOnline(false)}
-      userAgent={`DAEXNativeApp/1.0 ${Platform.OS}`}
+      userAgent={`${Platform.OS}`}
     />
   );
 }
