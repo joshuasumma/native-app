@@ -1,5 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { BackHandler, Platform, View, ActivityIndicator } from "react-native";
+import {
+  BackHandler,
+  Platform,
+  View,
+  ActivityIndicator,
+  AppStateStatus,
+  AppState,
+} from "react-native";
 import { Edge, SafeAreaView } from "react-native-safe-area-context";
 import { WebView, WebViewMessageEvent } from "react-native-webview";
 import { router } from "expo-router";
@@ -13,6 +20,7 @@ type Props = {
 export function DaexWebView({ url, onLoadError, userAgent }: Props) {
   const webViewRef = useRef<WebView>(null);
   const [canGoBack, setCanGoBack] = useState(false);
+  const appState = useRef<AppStateStatus>(AppState.currentState);
 
   const onAndroidBackPress = useCallback(() => {
     if (canGoBack && webViewRef.current) {
@@ -21,6 +29,21 @@ export function DaexWebView({ url, onLoadError, userAgent }: Props) {
     }
     return false;
   }, [canGoBack]);
+
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (nextState) => {
+      const cameToForeground =
+        appState.current.match(/inactive|background/) && nextState === "active";
+      appState.current = nextState;
+
+      if (cameToForeground) {
+        webViewRef.current?.injectJavaScript(
+          `window.__daexNativeResume && window.__daexNativeResume(); true;`,
+        );
+      }
+    });
+    return () => sub.remove();
+  }, []);
 
   useEffect(() => {
     if (Platform.OS !== "android") return;
