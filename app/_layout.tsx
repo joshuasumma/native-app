@@ -1,9 +1,10 @@
 import {
   DarkTheme,
   DefaultTheme,
+  router,
+  Stack,
   ThemeProvider,
-} from "@react-navigation/native";
-import { router, Stack } from "expo-router";
+} from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 

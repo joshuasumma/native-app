@@ -1,31 +1,28 @@
 {
   "expo": {
-    "name": "DÆX",
+    "name": "DAEX",
     "slug": "daex",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "orientation": "portrait",
     "icon": "./assets/images/logo.png",
     "scheme": "daex",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.daex",
+      "bundleIdentifier": "app.daex",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "DÆX benötigt Kamerazugriff, um Notizblock-Seiten zu scannen und daraus Aufgaben zu erstellen.",
+        "NSPhotoLibraryUsageDescription": "DÆX benötigt Zugriff auf deine Fotos, um vorhandene Bilder für den Aufgaben-Import zu nutzen.",
+        "NSMicrophoneUsageDescription": "DÆX benötigt Mikrofonzugriff, um gesprochene Aufgaben zu transkribieren."
       },
       "buildNumber": "1"
     },
     "android": {
       "icon": "./assets/images/logo.png",
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false,
-      "notification": {
-        "image": "./assets/images/logo.png",
-        "color": "#000000"
-      },
+      "permissions": ["CAMERA", "RECORD_AUDIO"],
       "versionCode": 1,
-      "package": "com.anonymous.daex"
+      "package": "app.daex"
     },
     "web": {
       "output": "static",
@@ -33,6 +30,13 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/logo.png",
+          "color": "#000000"
+        }
+      ],
       [
         "expo-splash-screen",
         {

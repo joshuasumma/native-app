@@ -35,7 +35,6 @@ export function DaexWebView({ url, onLoadError, userAgent }: Props) {
       const cameToForeground =
         appState.current.match(/inactive|background/) && nextState === "active";
       appState.current = nextState;
-
       if (cameToForeground) {
         webViewRef.current?.injectJavaScript(
           `window.__daexNativeResume && window.__daexNativeResume(); true;`,
