@@ -3,21 +3,25 @@ import {
   View,
   Text,
   Pressable,
+  ScrollView,
+  Animated,
+  Easing,
   useColorScheme,
   Alert,
+  AppState,
   Platform,
 } from "react-native";
 import { NativeHeader } from "@/components/NativeHeader";
-import { router } from "expo-router";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
+  BRIEFING_ENABLED_KEY,
+  BRIEFING_TIME_KEY,
   cancelDailyBriefing,
   scheduleDailyBriefing,
 } from "@/scripts/notifications";
-
-const BRIEFING_TIME_KEY = "briefing_time_hhmm";
-const BRIEFING_ENABLED_KEY = "briefing_enabled";
+import { refreshTaskPlayer } from "@/scripts/taskPlayer";
+import TaskPlayer from "@/modules/task-player";
 
 function pad2(n: number) {
   return n.toString().padStart(2, "0");
@@ -27,11 +31,7 @@ export default function PushSettings() {
   const scheme = useColorScheme();
   const isDark = scheme === "dark";
 
-  const bg = isDark ? "#000000" : "#ffffff";
-  const text = isDark ? "#ffffff" : "#000000";
-  const muted = isDark ? "rgba(255,255,255,0.65)" : "rgba(0,0,0,0.65)";
-  const card = isDark ? "#111111" : "#f6f6f6";
-  const border = isDark ? "#2f2f2f" : "#dcdcdc";
+  const c = palette(isDark);
 
   // default 08:00
   const [time, setTime] = useState<Date>(() => {
@@ -43,6 +43,24 @@ export default function PushSettings() {
   const [enabled, setEnabled] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
   const [busy, setBusy] = useState(false);
+  // "Alarms & reminders": only asked for where Android requires it
+  const [exactAlarms, setExactAlarms] = useState(
+    () => TaskPlayer?.canScheduleExactAlarms() ?? true,
+  );
+
+  // The switch lives in the system settings: re-check on return
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (next) => {
+      if (next !== "active" || !TaskPlayer) return;
+      const allowed = TaskPlayer.canScheduleExactAlarms();
+      setExactAlarms((before) => {
+        // Reschedule a pending timer alert so it rings exactly now
+        if (allowed && !before) refreshTaskPlayer();
+        return allowed;
+      });
+    });
+    return () => sub.remove();
+  }, []);
 
   const timeLabel = useMemo(() => {
     const hh = pad2(time.getHours());
@@ -106,6 +124,8 @@ export default function PushSettings() {
       setEnabled(true);
     } finally {
       setBusy(false);
+      // Today's progress notification follows the briefing setting
+      refreshTaskPlayer();
     }
   };
 
@@ -126,92 +146,254 @@ export default function PushSettings() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: bg }}>
+    <View style={{ flex: 1, backgroundColor: c.page }}>
       <NativeHeader title="App Settings" />
-      <View style={{ padding: 16, gap: 20 }}>
-        <View>
-          <Text style={{ fontSize: 22, fontWeight: "700", color: text }}>
-            Briefing
-          </Text>
-          <Text
-            style={{ marginTop: 8, fontSize: 15, lineHeight: 20, color: muted }}
-          >
-            Choose a time and enable a daily notification.
-          </Text>
-        </View>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 15 }}>
+        {/* Same look as the web settings page (MainSettings): a list of
+            rows with the label on the left and the control on the right */}
         <View
           style={{
-            backgroundColor: card,
-            borderRadius: 12,
-            padding: 14,
-            gap: 12,
+            paddingHorizontal: 15,
+            paddingVertical: 5,
+            borderRadius: 20,
+            backgroundColor: c.bg,
           }}
         >
-          <Text style={{ fontWeight: "600", color: text }}>
-            Status: {enabled ? "Enabled" : "Disabled"}
-          </Text>
-
-          <Pressable
-            onPress={() => setShowPicker(true)}
-            style={{
-              borderWidth: 1,
-              borderColor: border,
-              borderRadius: 10,
-              paddingVertical: 12,
-              paddingHorizontal: 12,
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <Text style={{ color: muted }}>Briefing time</Text>
-            <Text style={{ color: text, fontWeight: "600" }}>{timeLabel}</Text>
-          </Pressable>
-
-          {showPicker && (
-            <DateTimePicker
-              mode="time"
-              value={time}
-              is24Hour
-              display={Platform.OS === "ios" ? "spinner" : "default"}
-              onChange={onPickTime}
-            />
-          )}
-
-          <Pressable
+          <SettingsRow
+            c={c}
+            label="Daily briefing"
+            description="Get a daily notification at the time you choose."
             disabled={busy}
             onPress={() => applySchedule(!enabled, time)}
-            style={{
-              marginTop: 4,
-              paddingVertical: 12,
-              paddingHorizontal: 14,
-              borderRadius: 10,
-              borderWidth: 1,
-              borderColor: border,
-              alignSelf: "flex-start",
-              opacity: busy ? 0.6 : 1,
-            }}
-          >
-            <Text style={{ fontWeight: "600", color: text }}>
-              {enabled ? "Disable briefing" : "Enable briefing"}
-            </Text>
-          </Pressable>
-        </View>
+            right={
+              <DaexSwitch
+                c={c}
+                checked={enabled}
+                disabled={busy}
+                onPress={() => applySchedule(!enabled, time)}
+              />
+            }
+          />
+          <SettingsRow
+            c={c}
+            showDivider
+            label="Briefing time"
+            description="When the daily briefing arrives."
+            onPress={() => setShowPicker(true)}
+            right={
+              <View
+                style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+              >
+                <Text style={{ fontSize: 15, color: c.muted }}>
+                  {timeLabel}
+                </Text>
+                <Text
+                  style={{ fontSize: 24, lineHeight: 26, color: c.chevron }}
+                >
+                  ›
+                </Text>
+              </View>
+            }
+          />
 
-        <Pressable
-          onPress={() => router.back()}
-          style={{
-            marginTop: 10,
-            paddingVertical: 14,
-            borderRadius: 12,
-            borderWidth: 1,
-            borderColor: border,
-            alignItems: "center",
-          }}
-        >
-          <Text style={{ fontWeight: "600", color: text }}>Done</Text>
-        </Pressable>
-      </View>
+          {showPicker && (
+            <View style={{ paddingBottom: 10 }}>
+              <DateTimePicker
+                mode="time"
+                value={time}
+                is24Hour
+                display={Platform.OS === "ios" ? "spinner" : "default"}
+                onChange={onPickTime}
+              />
+              {/* The iOS spinner stays open until closed explicitly */}
+              {Platform.OS === "ios" && (
+                <Pressable
+                  onPress={() => setShowPicker(false)}
+                  hitSlop={10}
+                  style={{ alignSelf: "flex-end", paddingVertical: 6 }}
+                >
+                  <Text style={{ fontWeight: "600", color: c.accent }}>
+                    Done
+                  </Text>
+                </Pressable>
+              )}
+            </View>
+          )}
+
+          {Platform.OS === "android" && TaskPlayer && (
+            <SettingsRow
+              c={c}
+              showDivider
+              label="Exact timer alerts"
+              description={
+                exactAlarms
+                  ? "Pomodoro alerts ring right on time."
+                  : "Allow \"Alarms & reminders\" so Pomodoro alerts aren't late while the phone is in standby."
+              }
+              onPress={() => TaskPlayer?.openExactAlarmSettings()}
+              right={
+                <View
+                  style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 15,
+                      color: exactAlarms ? c.muted : c.accent,
+                      fontWeight: exactAlarms ? "400" : "600",
+                    }}
+                  >
+                    {exactAlarms ? "On" : "Allow"}
+                  </Text>
+                  <Text
+                    style={{ fontSize: 24, lineHeight: 26, color: c.chevron }}
+                  >
+                    ›
+                  </Text>
+                </View>
+              }
+            />
+          )}
+        </View>
+      </ScrollView>
     </View>
+  );
+}
+
+type Palette = ReturnType<typeof palette>;
+
+// Values of the web color tokens (daex-frontend colors.module.scss)
+function palette(isDark: boolean) {
+  return isDark
+    ? {
+        page: "#414141", // --color__grey150
+        bg: "#111111", // --color__white
+        text: "#ffffff", // --color__black
+        muted: "#d0d0d0", // --color__grey700
+        divider: "#686868", // --color__grey200
+        chevron: "#9c9c9c", // --color__grey400
+        accent: "#8fd49c", // --color__green500
+      }
+    : {
+        page: "#f8f8f8",
+        bg: "#ffffff",
+        text: "#000000",
+        muted: "#5a5a5a",
+        divider: "#e5e5e5",
+        chevron: "#ababab",
+        accent: "#79bc5c",
+      };
+}
+
+/** One setting per row, like SettingsToggleRow / SettingsLinkRow on the web */
+function SettingsRow({
+  c,
+  label,
+  description,
+  right,
+  onPress,
+  disabled,
+  showDivider,
+}: {
+  c: Palette;
+  label: string;
+  description?: string;
+  right: React.ReactNode;
+  onPress?: () => void;
+  disabled?: boolean;
+  showDivider?: boolean;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 16,
+        minHeight: 48,
+        paddingVertical: 10,
+        borderTopWidth: showDivider ? 1 : 0,
+        borderTopColor: c.divider,
+        opacity: disabled ? 0.6 : 1,
+      }}
+    >
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={{ fontSize: 16, color: c.text }}>{label}</Text>
+        {description && (
+          <Text style={{ fontSize: 13.5, color: c.muted }}>{description}</Text>
+        )}
+      </View>
+      {right}
+    </Pressable>
+  );
+}
+
+/** Same switch as DaexToggle on the web: 48×28 track, 22px handle */
+function DaexSwitch({
+  c,
+  checked,
+  disabled,
+  onPress,
+}: {
+  c: Palette;
+  checked: boolean;
+  disabled?: boolean;
+  onPress: () => void;
+}) {
+  const [progress] = useState(() => new Animated.Value(checked ? 1 : 0));
+
+  useEffect(() => {
+    Animated.timing(progress, {
+      toValue: checked ? 1 : 0,
+      duration: 150,
+      easing: Easing.ease,
+      // Color can't be animated natively
+      useNativeDriver: false,
+    }).start();
+  }, [checked, progress]);
+
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityRole="switch"
+      accessibilityState={{ checked, disabled }}
+    >
+      <Animated.View
+        style={{
+          width: 48,
+          height: 28,
+          padding: 3,
+          borderRadius: 14,
+          backgroundColor: progress.interpolate({
+            inputRange: [0, 1],
+            outputRange: [c.chevron, c.accent],
+          }),
+        }}
+      >
+        <Animated.View
+          style={{
+            width: 22,
+            height: 22,
+            borderRadius: 11,
+            backgroundColor: "#ffffff",
+            shadowColor: "#000",
+            shadowOpacity: 0.25,
+            shadowRadius: 3,
+            shadowOffset: { width: 0, height: 1 },
+            elevation: 2,
+            transform: [
+              {
+                translateX: progress.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, 20],
+                }),
+              },
+            ],
+          }}
+        />
+      </Animated.View>
+    </Pressable>
   );
 }

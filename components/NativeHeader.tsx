@@ -9,31 +9,46 @@ type Props = {
   right?: React.ReactNode; // optional: button(s) on the right
 };
 
+/**
+ * Looks like the web app's StructureBar: a white rounded bar with a round
+ * back button and the title, floating on the grey page background.
+ */
 export function NativeHeader({ title, right }: Props) {
   const scheme = useColorScheme();
   const isDark = scheme === "dark";
 
-  const bg = isDark ? "#000000" : "#ffffff";
+  // Web color tokens: --color__grey150, --color__white, --color__black
+  const page = isDark ? "#414141" : "#f8f8f8";
+  const bar = isDark ? "#111111" : "#ffffff";
   const text = isDark ? "#ffffff" : "#000000";
-  const border = isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)";
 
   return (
-    <SafeAreaView edges={["top"]} style={{ backgroundColor: bg }}>
+    <SafeAreaView edges={["top"]} style={{ backgroundColor: page }}>
       <View
         style={{
-          paddingHorizontal: 12,
+          marginHorizontal: 15,
+          marginVertical: 10,
+          padding: 10,
+          borderRadius: 20,
           flexDirection: "row",
           alignItems: "center",
-          justifyContent: "space-between",
-          borderBottomWidth: 1,
-          borderBottomColor: border,
-          backgroundColor: bg,
+          gap: 10,
+          backgroundColor: bar,
         }}
       >
         <Pressable
           onPress={() => router.back()}
           hitSlop={10}
-          style={{ paddingHorizontal: 8 }}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+          style={{
+            width: 42,
+            height: 42,
+            borderRadius: 21,
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: page,
+          }}
         >
           <Ionicons name="chevron-back" size={22} color={text} />
         </Pressable>
@@ -42,15 +57,16 @@ export function NativeHeader({ title, right }: Props) {
           numberOfLines={1}
           style={{
             flex: 1,
-            textAlign: "center",
-            fontSize: 16,
-            fontWeight: "600",
+            fontSize: 20,
+            fontWeight: "700",
+            letterSpacing: 0.24,
             color: text,
-            marginHorizontal: 8,
           }}
         >
           {title}
         </Text>
+
+        {right}
       </View>
     </SafeAreaView>
   );

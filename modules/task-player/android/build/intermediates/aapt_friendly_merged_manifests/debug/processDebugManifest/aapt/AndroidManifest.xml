@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="app.daex.taskplayer" >
+
+    <uses-sdk android:minSdkVersion="24" />
+    <!-- Timer alerts on time; the user allows it under "Alarms & reminders" -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+
+</manifest>

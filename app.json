@@ -16,7 +16,8 @@
         "NSPhotoLibraryUsageDescription": "DÆX benötigt Zugriff auf deine Fotos, um vorhandene Bilder für den Aufgaben-Import zu nutzen.",
         "NSMicrophoneUsageDescription": "DÆX benötigt Mikrofonzugriff, um gesprochene Aufgaben zu transkribieren."
       },
-      "buildNumber": "1"
+      "buildNumber": "1",
+      "associatedDomains": ["webcredentials:daex.app"]
     },
     "android": {
       "icon": "./assets/images/logo.png",
@@ -49,7 +50,9 @@
             "backgroundColor": "#000000"
           }
         }
-      ]
+      ],
+      "expo-image",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,

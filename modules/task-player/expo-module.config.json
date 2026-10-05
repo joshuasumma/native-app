@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": {
+    "modules": ["TaskPlayerModule"]
+  },
+  "android": {
+    "modules": ["app.daex.taskplayer.TaskPlayerModule"]
+  }
+}

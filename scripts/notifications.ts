@@ -1,9 +1,19 @@
-import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Constants, { ExecutionEnvironment } from "expo-constants";
+
+// expo-notifications throws on import in Expo Go (Android, SDK 53+), so only load it in dev/prod builds.
+// null means notifications are unavailable; callers must check before using it.
+const isExpoGo =
+  Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+export const Notifications: typeof import("expo-notifications") | null =
+  isExpoGo
+    ? null
+    : // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require("expo-notifications");
 
 // Call once, at module load: OK.
-Notifications.setNotificationHandler({
+Notifications?.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
     shouldShowBanner: true,
@@ -14,9 +24,11 @@ Notifications.setNotificationHandler({
 });
 
 const BRIEFING_NOTIFICATION_ID_KEY = "briefing_notification_id";
+export const BRIEFING_TIME_KEY = "briefing_time_hhmm";
+export const BRIEFING_ENABLED_KEY = "briefing_enabled";
 
 async function ensureAndroidChannel() {
-  if (Platform.OS !== "android") return;
+  if (!Notifications || Platform.OS !== "android") return;
   await Notifications.setNotificationChannelAsync("default", {
     name: "Default",
     importance: Notifications.AndroidImportance.DEFAULT,
@@ -24,6 +36,7 @@ async function ensureAndroidChannel() {
 }
 
 export async function requestNotificationPermission(): Promise<boolean> {
+  if (!Notifications) return false;
   const settings = await Notifications.getPermissionsAsync();
   if (settings.status !== "granted") {
     const req = await Notifications.requestPermissionsAsync();
@@ -33,6 +46,7 @@ export async function requestNotificationPermission(): Promise<boolean> {
 }
 
 export async function cancelDailyBriefing() {
+  if (!Notifications) return;
   const id = await AsyncStorage.getItem(BRIEFING_NOTIFICATION_ID_KEY);
   if (id) {
     await Notifications.cancelScheduledNotificationAsync(id);
@@ -41,6 +55,7 @@ export async function cancelDailyBriefing() {
 }
 
 export async function scheduleDailyBriefing(hour: number, minute: number) {
+  if (!Notifications) return { ok: false as const };
   const ok = await requestNotificationPermission();
   if (!ok) return { ok: false as const };
 

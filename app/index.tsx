@@ -1,10 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Platform } from "react-native";
 import NetInfo from "@react-native-community/netinfo";
 import { DaexWebView } from "@/components/DaexWebView";
 import { OfflineScreen } from "@/components/OfflineScreen";
 
-const URL = "http://daex.app/"; //"http://192.168.2.112:3000/"; //
+const URL = process.env.EXPO_PUBLIC_API_URL || "https://daex.app";
 
 export default function Index() {
   const [isOnline, setIsOnline] = useState(true);
@@ -39,7 +38,6 @@ export default function Index() {
       key={webKey}
       url={URL}
       onLoadError={() => setIsOnline(false)}
-      userAgent={`${Platform.OS}`}
     />
   );
 }

@@ -10,13 +10,14 @@ import "react-native-reanimated";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useEffect, useRef } from "react";
-import * as Notifications from "expo-notifications";
+import { Notifications } from "@/scripts/notifications";
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const handledRef = useRef(false);
 
   useEffect(() => {
+    if (!Notifications) return;
     const sub = Notifications.addNotificationResponseReceivedListener(
       (response) => {
         if (handledRef.current) return;
