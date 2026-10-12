@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { Edge, SafeAreaView } from "react-native-safe-area-context";
 import { WebView, WebViewMessageEvent } from "react-native-webview";
+import type { ShouldStartLoadRequest } from "react-native-webview/lib/WebViewTypes";
 import { router } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import type { TaskPlayerState } from "@/modules/task-player";
@@ -20,6 +21,11 @@ const NATIVE_OAUTH_REDIRECT = "daex://oauth";
 const NATIVE_OAUTH_PROVIDERS = ["google", "microsoft"];
 const ALLOWED_OAUTH_URL =
   /^https:\/\/(accounts\.google\.com|login\.microsoftonline\.com)\//;
+// Must match WKAppBoundDomains in app.json. iOS only runs the web app's service
+// worker for app-bound domains, but then blocks navigation to every other domain.
+const APP_BOUND_DOMAINS = ["daex.app"];
+
+const hostOf = (url: string) => url.match(/^https?:\/\/([^/:?#]+)/i)?.[1] ?? "";
 
 type Props = {
   url: string;
@@ -30,6 +36,19 @@ export function DaexWebView({ url, onLoadError }: Props) {
   const webViewRef = useRef<WebView>(null);
   const [canGoBack, setCanGoBack] = useState(false);
   const appState = useRef<AppStateStatus>(AppState.currentState);
+  // Off for the dev server (LAN IP), which is not an app-bound domain
+  const limitToAppBound =
+    Platform.OS === "ios" && APP_BOUND_DOMAINS.includes(hostOf(url));
+
+  // Pages on other domains would fail to load (and show the offline screen),
+  // so open them in the system browser instead.
+  const onShouldStartLoadWithRequest = (req: ShouldStartLoadRequest) => {
+    if (!limitToAppBound || !req.isTopFrame) return true;
+    const host = hostOf(req.url);
+    if (!host || APP_BOUND_DOMAINS.includes(host)) return true;
+    WebBrowser.openBrowserAsync(req.url);
+    return false;
+  };
 
   const onAndroidBackPress = useCallback(() => {
     if (canGoBack && webViewRef.current) {
@@ -146,6 +165,8 @@ export function DaexWebView({ url, onLoadError }: Props) {
           true;
         `}
         onMessage={onMessage}
+        limitsNavigationsToAppBoundDomains={limitToAppBound}
+        onShouldStartLoadWithRequest={onShouldStartLoadWithRequest}
         allowsBackForwardNavigationGestures
         // Appends to the real browser UA; replacing it breaks sites that sniff it (OAuth providers, autofill)
         applicationNameForUserAgent={`DAEX-App/${Platform.OS}`}

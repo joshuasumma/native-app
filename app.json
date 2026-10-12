@@ -12,16 +12,23 @@
       "bundleIdentifier": "app.daex",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleLocalizations": ["de", "en", "es", "fr", "it"],
+        "WKAppBoundDomains": ["daex.app"],
         "NSCameraUsageDescription": "DÆX benötigt Kamerazugriff, um Notizblock-Seiten zu scannen und daraus Aufgaben zu erstellen.",
         "NSPhotoLibraryUsageDescription": "DÆX benötigt Zugriff auf deine Fotos, um vorhandene Bilder für den Aufgaben-Import zu nutzen.",
         "NSMicrophoneUsageDescription": "DÆX benötigt Mikrofonzugriff, um gesprochene Aufgaben zu transkribieren."
       },
       "buildNumber": "1",
-      "associatedDomains": ["webcredentials:daex.app"]
+      "associatedDomains": [
+        "webcredentials:daex.app"
+      ]
     },
     "android": {
       "icon": "./assets/images/logo.png",
-      "permissions": ["CAMERA", "RECORD_AUDIO"],
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO"
+      ],
       "versionCode": 1,
       "package": "app.daex"
     },
@@ -52,7 +59,17 @@
         }
       ],
       "expo-image",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "extraProguardRules": "-keep class app.daex.taskplayer.** { *; }"
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
