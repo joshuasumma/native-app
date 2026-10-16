@@ -29,6 +29,9 @@
         "CAMERA",
         "RECORD_AUDIO"
       ],
+      "blockedPermissions": [
+        "android.permission.WRITE_CALENDAR"
+      ],
       "versionCode": 1,
       "package": "app.daex"
     },
@@ -60,6 +63,13 @@
       ],
       "expo-image",
       "expo-web-browser",
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "DÆX benötigt Zugriff auf deine Kalender, um deine Termine neben deinen Aufgaben anzuzeigen. Die Termine bleiben auf deinem Gerät.",
+          "remindersPermission": false
+        }
+      ],
       [
         "expo-build-properties",
         {

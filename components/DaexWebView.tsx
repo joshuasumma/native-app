@@ -14,11 +14,21 @@ import { router } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import type { TaskPlayerState } from "@/modules/task-player";
 import { applyTaskPlayerState } from "@/scripts/taskPlayer";
+import {
+  connectDeviceCalendar,
+  disconnectDeviceCalendar,
+  getDeviceCalendarEvents,
+  getDeviceCalendarStatus,
+  openDeviceCalendarEvent,
+  selectDeviceCalendars,
+} from "@/scripts/deviceCalendar";
 
 // Deep link the backend redirects to after sign-in (see the backend's oauth/native-callback routes)
 const NATIVE_OAUTH_REDIRECT = "daex://oauth";
 // Providers run in the system browser; only their sign-in pages may be opened
 const NATIVE_OAUTH_PROVIDERS = ["google", "microsoft"];
+// Features the web app may use in this app version (window.__DAEX_NATIVE_FEATURES__)
+const NATIVE_FEATURES = ["deviceCalendar"];
 const ALLOWED_OAUTH_URL =
   /^https:\/\/(accounts\.google\.com|login\.microsoftonline\.com)\//;
 // Must match WKAppBoundDomains in app.json. iOS only runs the web app's service
@@ -65,7 +75,7 @@ export function DaexWebView({ url, onLoadError }: Props) {
       appState.current = nextState;
       if (cameToForeground) {
         webViewRef.current?.injectJavaScript(
-          `window.__daexNativeResume && window.__daexNativeResume(); true;`,
+          `window.__daexNativeResume && window.__daexNativeResume(); window.dispatchEvent(new Event("daex:native-resume")); true;`,
         );
       }
     });
@@ -87,7 +97,43 @@ export function DaexWebView({ url, onLoadError }: Props) {
     | { type: "OPEN_PUSH_SETTINGS" }
     | { type: "GET_PUSH_STATUS" }
     | { type: "OAUTH_OPEN"; url: string }
-    | { type: "TASK_PLAYER_STATE"; state: TaskPlayerState | null };
+    | { type: "TASK_PLAYER_STATE"; state: TaskPlayerState | null }
+    | { type: "DEVICE_CALENDAR_OPEN"; id: string }
+    // Requests: answered with a RESPONSE carrying the same requestId
+    | { type: "DEVICE_CALENDAR_STATUS"; requestId: string }
+    | {
+        type: "DEVICE_CALENDAR_CONNECT";
+        requestId: string;
+        connectedProviders: string[];
+      }
+    | {
+        type: "DEVICE_CALENDAR_SELECT";
+        requestId: string;
+        calendarIds: string[];
+      }
+    | { type: "DEVICE_CALENDAR_DISCONNECT"; requestId: string }
+    | {
+        type: "DEVICE_CALENDAR_EVENTS";
+        requestId: string;
+        timeMin: string;
+        timeMax: string;
+      };
+
+  // Answers a request of the web app (requestNative in nativeBridge.ts)
+  const respond = async (requestId: string, run: () => Promise<unknown>) => {
+    let response;
+    try {
+      response = { type: "RESPONSE", requestId, ok: true, data: await run() };
+    } catch (error) {
+      response = { type: "RESPONSE", requestId, ok: false, reason: String(error) };
+    }
+    // Stringified twice: once for the message, once as a JS string literal
+    webViewRef.current?.injectJavaScript(
+      `window.dispatchEvent(new MessageEvent("message", { data: ${JSON.stringify(
+        JSON.stringify(response),
+      )} })); true;`,
+    );
+  };
 
   // Google and Microsoft block (or break) sign-in inside WebViews, so it runs in the system browser.
   // The PKCE verifier stays in the WebView's sessionStorage, so the result is
@@ -129,6 +175,31 @@ export function DaexWebView({ url, onLoadError }: Props) {
         applyTaskPlayerState(msg.state);
       }
 
+      switch (msg.type) {
+        case "DEVICE_CALENDAR_STATUS":
+          respond(msg.requestId, getDeviceCalendarStatus);
+          break;
+        case "DEVICE_CALENDAR_CONNECT":
+          respond(msg.requestId, () =>
+            connectDeviceCalendar(msg.connectedProviders),
+          );
+          break;
+        case "DEVICE_CALENDAR_SELECT":
+          respond(msg.requestId, () => selectDeviceCalendars(msg.calendarIds));
+          break;
+        case "DEVICE_CALENDAR_DISCONNECT":
+          respond(msg.requestId, disconnectDeviceCalendar);
+          break;
+        case "DEVICE_CALENDAR_EVENTS":
+          respond(msg.requestId, () =>
+            getDeviceCalendarEvents(msg.timeMin, msg.timeMax),
+          );
+          break;
+        case "DEVICE_CALENDAR_OPEN":
+          openDeviceCalendarEvent(msg.id).catch(() => {});
+          break;
+      }
+
       if (msg.type === "GET_PUSH_STATUS") {
         // You can respond here later
       }
@@ -157,6 +228,7 @@ export function DaexWebView({ url, onLoadError }: Props) {
         injectedJavaScriptBeforeContentLoaded={`
           window.__DAEX_NATIVE__ = true;
           window.__DAEX_NATIVE_OAUTH__ = ${JSON.stringify(NATIVE_OAUTH_PROVIDERS)};
+          window.__DAEX_NATIVE_FEATURES__ = ${JSON.stringify(NATIVE_FEATURES)};
           window.DAEX_NATIVE_BRIDGE = {
             postMessage: function (msg) {
               window.ReactNativeWebView?.postMessage(msg);
